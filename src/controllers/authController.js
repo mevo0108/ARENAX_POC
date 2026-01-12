@@ -103,7 +103,19 @@ const authController = {
       console.error('Login error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
+  },
+  // Logout user - Need to implement token invalidation if necessary
+  async logout(req, res) {
+    try {
+      // Invalidate token logic can be implemented here if using a token blacklist
+      res.json({ message: 'Logout successful' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
+
+
 };
 
 module.exports = authController;

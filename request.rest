@@ -27,3 +27,9 @@ Content-Type: application/json
   "password": "12345"
 }
 
+### LOGOUT USER
+POST http://localhost:3000/api/auth/logout
+
+
+
+

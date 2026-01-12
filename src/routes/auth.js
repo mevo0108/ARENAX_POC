@@ -9,4 +9,6 @@ router.post('/register', authLimiter, authController.register);
 // POST /api/auth/login - Login user
 router.post('/login', authLimiter, authController.login);
 
+router.post('/logout', authLimiter, authController.logout);
+
 module.exports = router;
