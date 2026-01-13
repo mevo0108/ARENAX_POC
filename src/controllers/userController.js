@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const Game = require('../models/Game');
+import User from '../models/User.js';
+import Game from '../models/Game.js';
 
 const userController = {
   // Get user profile
@@ -36,7 +36,10 @@ const userController = {
       console.error('Get game history error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
-  }
+  },
+
+
+
 };
 
-module.exports = userController;
+export default userController;

@@ -1,9 +1,10 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+import sqlite3 from 'sqlite3';
+import path from 'path';
 
+const sqlite = sqlite3.verbose();
 const DB_PATH = process.env.DATABASE_PATH || './arenax.db';
 
-const db = new sqlite3.Database(DB_PATH, (err) => {
+const db = new sqlite.Database(DB_PATH, (err) => {
   if (err) {
     console.error('Error connecting to database:', err);
   } else {
@@ -63,6 +64,24 @@ db.serialize(() => {
       FOREIGN KEY (winner_id) REFERENCES users(id)
     )
   `);
+
+  // Blacklisted tokens table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS blacklisted_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT UNIQUE NOT NULL,
+      user_id INTEGER NOT NULL,
+      blacklisted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Create index for faster token lookups
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_token 
+    ON blacklisted_tokens(token)
+  `);
 });
 
-module.exports = db;
+export default db;

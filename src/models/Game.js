@@ -1,10 +1,10 @@
-const db = require('../config/database');
+import db from '../config/database.js';
 
 class Game {
   static create(gameLink, externalApi = null, externalGameId = null) {
     return new Promise((resolve, reject) => {
       const query = 'INSERT INTO games (game_link, external_api, external_game_id) VALUES (?, ?, ?)';
-      db.run(query, [gameLink, externalApi, externalGameId], function(err) {
+      db.run(query, [gameLink, externalApi, externalGameId], function (err) {
         if (err) {
           reject(err);
         } else {
@@ -36,12 +36,12 @@ class Game {
 
   static updateStatus(id, status, completedAt = null) {
     return new Promise((resolve, reject) => {
-      const query = completedAt 
+      const query = completedAt
         ? 'UPDATE games SET status = ?, completed_at = ? WHERE id = ?'
         : 'UPDATE games SET status = ? WHERE id = ?';
       const params = completedAt ? [status, completedAt, id] : [status, id];
-      
-      db.run(query, params, function(err) {
+
+      db.run(query, params, function (err) {
         if (err) reject(err);
         else resolve({ changes: this.changes });
       });
@@ -51,7 +51,7 @@ class Game {
   static addPlayer(gameId, userId, position = null) {
     return new Promise((resolve, reject) => {
       const query = 'INSERT INTO game_players (game_id, user_id, position) VALUES (?, ?, ?)';
-      db.run(query, [gameId, userId, position], function(err) {
+      db.run(query, [gameId, userId, position], function (err) {
         if (err) {
           reject(err);
         } else {
@@ -64,7 +64,7 @@ class Game {
   static updatePlayerResult(gameId, userId, score, result) {
     return new Promise((resolve, reject) => {
       const query = 'UPDATE game_players SET score = ?, result = ? WHERE game_id = ? AND user_id = ?';
-      db.run(query, [score, result, gameId, userId], function(err) {
+      db.run(query, [score, result, gameId, userId], function (err) {
         if (err) reject(err);
         else resolve({ changes: this.changes });
       });
@@ -89,7 +89,7 @@ class Game {
   static saveResult(gameId, winnerId, gameData) {
     return new Promise((resolve, reject) => {
       const query = 'INSERT INTO game_results (game_id, winner_id, game_data) VALUES (?, ?, ?)';
-      db.run(query, [gameId, winnerId, JSON.stringify(gameData)], function(err) {
+      db.run(query, [gameId, winnerId, JSON.stringify(gameData)], function (err) {
         if (err) {
           reject(err);
         } else {
@@ -127,4 +127,4 @@ class Game {
   }
 }
 
-module.exports = Game;
+export default Game;

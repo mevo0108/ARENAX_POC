@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 const LEECHES_API_URL = process.env.LEECHES_API_URL || 'https://api.leeches.example.com';
 const LEECHES_API_KEY = process.env.LEECHES_API_KEY || '';
@@ -89,4 +89,4 @@ const leechesService = {
   }
 };
 
-module.exports = leechesService;
+export default leechesService;

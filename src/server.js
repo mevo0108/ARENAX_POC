@@ -1,15 +1,15 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const gameRoutes = require('./routes/games');
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import gameRoutes from './routes/games.js';
 
 // Initialize database
-require('./config/database');
+import './config/database.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -70,4 +70,4 @@ app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
-module.exports = app;
+export default app;
