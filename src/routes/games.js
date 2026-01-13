@@ -1,12 +1,12 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const gameController = require('../controllers/gameController');
-const authMiddleware = require('../middleware/auth');
-const { apiLimiter } = require('../middleware/rateLimiter');
+import gameController from '../controllers/gameController.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { apiLimiter } from '../middleware/rateLimiter.js';
 
 // All routes require authentication and rate limiting
 router.use(apiLimiter);
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 // POST /api/games - Create a new game
 router.post('/', gameController.createGame);
@@ -20,4 +20,4 @@ router.post('/:gameLink/join', gameController.joinGame);
 // POST /api/games/:gameLink/result - Submit game result
 router.post('/:gameLink/result', gameController.submitResult);
 
-module.exports = router;
+export default router;

@@ -1,6 +1,7 @@
 {
   "name": "arenax_poc",
   "version": "1.0.0",
+  "type": "module",
   "description": "social platform for managing tournaments of cards games, wallet and connecting to external api's games.",
   "main": "src/server.js",
   "scripts": {
