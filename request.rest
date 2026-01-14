@@ -38,19 +38,16 @@ GET https://lichess.org/api/account
 Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
 
 
-### REGISTER NEW USER ON LICHESS
-POST https://lichess.org/api/user
-Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
-Content-Type: application/json
-
-{
-  "username": "mevo",
-  "email": "mevo@gmail.com",
-  "password": "12345"
-}
-
 
 
 ### CREATE NEW LICHESS GAME
-POST https://lichess.org/api/games
-Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
+POST http://localhost:3000/api/games
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjdiNjVhNjRmNjVhODg4NTljYjkxYSIsInVzZXJuYW1lIjoibWV2byIsImVtYWlsIjoibWV2b0BnbWFpbC5jb20iLCJpYXQiOjE3Njg0MDY4NzEsImV4cCI6MTc2OTAxMTY3MX0._GHvFnlqzFQ7W56z7T9zGgap7EiFjwOHtDgg-jP_Qbs
+Content-Type: application/json
+
+
+### JOIN GAME
+POST http://localhost:3000/api/games/31b7346c-bb29-49f1-a130-cd5287f69f39/join
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjdiNjVhNjRmNjVhODg4NTljYjkxYSIsInVzZXJuYW1lIjoibWV2byIsImVtYWlsIjoibWV2b0BnbWFpbC5jb20iLCJpYXQiOjE3Njg0MDY4NzEsImV4cCI6MTc2OTAxMTY3MX0._GHvFnlqzFQ7W56z7T9zGgap7EiFjwOHtDgg-jP_Qbs
+Content-Type: application/json
+  

@@ -32,12 +32,16 @@ gameSchema.statics.create = async function (gameLink, externalApi = null, extern
   return { id: game._id, game_link: game.game_link };
 };
 
-gameSchema.statics.findByLink = function (gameLink) {
-  return this.findOne({ game_link: gameLink }).lean();
+gameSchema.statics.findByLink = async function (gameLink) {
+  const doc = await this.findOne({ game_link: gameLink }).lean();
+  if (!doc) return null;
+  // normalize to include `id` (controllers expect game.id)
+  return { ...doc, id: doc._id };
 };
 
 gameSchema.statics.findById = function (id) {
-  return this.findById(id).lean();
+  // Avoid recursion: use findOne by _id instead of calling this.findById which would call this method again.
+  return this.findOne({ _id: id }).lean();
 };
 
 gameSchema.statics.updateStatus = async function (id, status, completedAt = null) {

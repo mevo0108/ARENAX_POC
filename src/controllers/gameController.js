@@ -6,7 +6,13 @@ const gameController = {
   // Create a new game session
   async createGame(req, res) {
     try {
-      const { externalApi, players } = req.body;
+      // Protect against missing body (some clients may omit Content-Type)
+      const body = req.body || {};
+      const { externalApi, players } = body;
+
+      if (!req.body) {
+        return res.status(400).json({ error: 'Request body required (application/json)' });
+      }
       const userId = req.user.id;
 
       // Generate unique game link
