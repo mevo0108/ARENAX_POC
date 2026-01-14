@@ -1,130 +1,88 @@
-const db = require('../config/database');
+import mongoose from 'mongoose';
 
-class Game {
-  static create(gameLink, externalApi = null, externalGameId = null) {
-    return new Promise((resolve, reject) => {
-      const query = 'INSERT INTO games (game_link, external_api, external_game_id) VALUES (?, ?, ?)';
-      db.run(query, [gameLink, externalApi, externalGameId], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ id: this.lastID, game_link: gameLink });
-        }
-      });
-    });
-  }
+const { Schema } = mongoose;
 
-  static findByLink(gameLink) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM games WHERE game_link = ?';
-      db.get(query, [gameLink], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
+const gamePlayerSchema = new Schema({
+  user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  position: { type: Number },
+  score: { type: Number, default: 0 },
+  result: { type: String }
+});
 
-  static findById(id) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM games WHERE id = ?';
-      db.get(query, [id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
+const gameResultSchema = new Schema({
+  winner_id: { type: Schema.Types.ObjectId, ref: 'User' },
+  game_data: { type: Schema.Types.Mixed },
+  created_at: { type: Date, default: Date.now }
+});
 
-  static updateStatus(id, status, completedAt = null) {
-    return new Promise((resolve, reject) => {
-      const query = completedAt 
-        ? 'UPDATE games SET status = ?, completed_at = ? WHERE id = ?'
-        : 'UPDATE games SET status = ? WHERE id = ?';
-      const params = completedAt ? [status, completedAt, id] : [status, id];
-      
-      db.run(query, params, function(err) {
-        if (err) reject(err);
-        else resolve({ changes: this.changes });
-      });
-    });
-  }
+const gameSchema = new Schema({
+  game_link: { type: String, required: true, unique: true },
+  external_api: { type: String },
+  external_game_id: { type: String },
+  status: { type: String, default: 'pending' },
+  created_at: { type: Date, default: Date.now },
+  completed_at: { type: Date },
+  players: [gamePlayerSchema],
+  results: [gameResultSchema]
+});
 
-  static addPlayer(gameId, userId, position = null) {
-    return new Promise((resolve, reject) => {
-      const query = 'INSERT INTO game_players (game_id, user_id, position) VALUES (?, ?, ?)';
-      db.run(query, [gameId, userId, position], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ id: this.lastID });
-        }
-      });
-    });
-  }
+gameSchema.statics.create = async function (gameLink, externalApi = null, externalGameId = null) {
+  const game = new this({ game_link: gameLink, external_api: externalApi, external_game_id: externalGameId });
+  await game.save();
+  return { id: game._id, game_link: game.game_link };
+};
 
-  static updatePlayerResult(gameId, userId, score, result) {
-    return new Promise((resolve, reject) => {
-      const query = 'UPDATE game_players SET score = ?, result = ? WHERE game_id = ? AND user_id = ?';
-      db.run(query, [score, result, gameId, userId], function(err) {
-        if (err) reject(err);
-        else resolve({ changes: this.changes });
-      });
-    });
-  }
+gameSchema.statics.findByLink = function (gameLink) {
+  return this.findOne({ game_link: gameLink }).lean();
+};
 
-  static getPlayersByGameId(gameId) {
-    return new Promise((resolve, reject) => {
-      const query = `
-        SELECT gp.*, u.username, u.email 
-        FROM game_players gp
-        JOIN users u ON gp.user_id = u.id
-        WHERE gp.game_id = ?
-      `;
-      db.all(query, [gameId], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-  }
+gameSchema.statics.findById = function (id) {
+  return this.findById(id).lean();
+};
 
-  static saveResult(gameId, winnerId, gameData) {
-    return new Promise((resolve, reject) => {
-      const query = 'INSERT INTO game_results (game_id, winner_id, game_data) VALUES (?, ?, ?)';
-      db.run(query, [gameId, winnerId, JSON.stringify(gameData)], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ id: this.lastID });
-        }
-      });
-    });
-  }
+gameSchema.statics.updateStatus = async function (id, status, completedAt = null) {
+  const update = { status };
+  if (completedAt) update.completed_at = completedAt;
+  const res = await this.updateOne({ _id: id }, { $set: update });
+  return { changes: res.modifiedCount };
+};
 
-  static getUserGameHistory(userId, limit = 10) {
-    return new Promise((resolve, reject) => {
-      const query = `
-        SELECT 
-          g.id as game_id,
-          g.game_link,
-          g.external_api,
-          g.status,
-          g.completed_at,
-          gp.score,
-          gp.result,
-          gr.winner_id,
-          (SELECT username FROM users WHERE id = gr.winner_id) as winner_username
-        FROM games g
-        JOIN game_players gp ON g.id = gp.game_id
-        LEFT JOIN game_results gr ON g.id = gr.game_id
-        WHERE gp.user_id = ?
-        ORDER BY g.completed_at DESC
-        LIMIT ?
-      `;
-      db.all(query, [userId, limit], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-  }
-}
+gameSchema.statics.addPlayer = async function (gameId, userId, position = null) {
+  const player = { user_id: userId, position };
+  const res = await this.updateOne({ _id: gameId }, { $push: { players: player } });
+  if (res.matchedCount === 0) throw new Error('Game not found');
+  return { success: true };
+};
 
-module.exports = Game;
+gameSchema.statics.updatePlayerResult = async function (gameId, userId, score, result) {
+  const res = await this.updateOne({ _id: gameId, 'players.user_id': userId }, { $set: { 'players.$.score': score, 'players.$.result': result } });
+  return { changes: res.modifiedCount };
+};
+
+gameSchema.statics.getPlayersByGameId = async function (gameId) {
+  const game = await this.findById(gameId).populate('players.user_id', 'username email').lean();
+  if (!game) return [];
+  return (game.players || []).map(p => ({ ...p, username: p.user_id?.username, email: p.user_id?.email }));
+};
+
+gameSchema.statics.saveResult = async function (gameId, winnerId, gameData) {
+  const result = { winner_id: winnerId, game_data: gameData };
+  const res = await this.updateOne({ _id: gameId }, { $push: { results: result } });
+  return { success: true };
+};
+
+gameSchema.statics.getUserGameHistory = async function (userId, limit = 10) {
+  const games = await this.find({ 'players.user_id': userId })
+    .sort({ completed_at: -1 })
+    .limit(limit)
+    .lean();
+  return games;
+};
+
+const Game = mongoose.model('Game', gameSchema);
+
+export default Game;
+
+/*
+  Original SQLite-based implementation is kept in project history before this migration.
+*/

@@ -1,6 +1,6 @@
-const Game = require('../models/Game');
-const { v4: uuidv4 } = require('uuid');
-const leechesService = require('../services/leechesService');
+import Game from '../models/Game.js';
+import { v4 as uuidv4 } from 'uuid';
+import leechesService from '../services/leechesService.js';
 
 const gameController = {
   // Create a new game session
@@ -161,4 +161,4 @@ const gameController = {
   }
 };
 
-module.exports = gameController;
+export default gameController;
