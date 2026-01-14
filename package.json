@@ -23,8 +23,8 @@
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^7.7.0",
-    "sqlite3": "^5.1.7",
+  "sqlite3": "^5.1.7",
+  "mongoose": "^7.7.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

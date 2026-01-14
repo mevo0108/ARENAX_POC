@@ -1,99 +1,115 @@
-import { useState } from "react";
-import StatCard from "../components/StatCard";
+import { useEffect, useMemo, useState } from "react";
 import StartTournamentCard from "../components/StartTournamentCard";
+import { getProfile } from "../services/usersApi";
 
-export default function UserProfile() {
-  const [activeTab, setActiveTab] = useState("Overview");
+export default function UserProfile({ onLogout }) {
+  const [status, setStatus] = useState("loading"); // loading | ready | error
+  const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
 
-  // Demo user (later can come from backend)
-  const user = {
-    name: "Shaked",
-    username: "@shakedcrissy",
-    email: "shaked@example.com",
-    lichess: "Connected",
-    avatarLetters: "S",
-  };
+  useEffect(() => {
+    let cancelled = false;
 
-  return (
-    <div className="container">
-      <div className="topbar">
-        <div className="icon-dot">☰</div>
-        <div className="icon-dot">🔔</div>
-        <div className="icon-dot">⚙️</div>
-      </div>
+    async function load() {
+      setStatus("loading");
+      setError("");
 
-      {/* Profile Hero */}
-      <div className="card profile-hero">
-        <div className="card-inner">
-          <div className="profile-row">
-            <div className="avatar">{user.avatarLetters}</div>
+      try {
+        const data = await getProfile();
+        if (!cancelled) {
+          setUser(data?.user || null);
+          setStatus("ready");
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e?.message || "Failed to load profile");
+          setStatus("error");
+        }
+      }
+    }
 
-            <div>
-              <h1 className="h1">{user.name}</h1>
-              <p className="sub">
-                {user.username} • {user.email}
-              </p>
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-              <div className="badges">
-                <span className="badge">♟️ Lichess: {user.lichess}</span>
-                <span className="badge">🏆 Organizer</span>
-                <span className="badge">📍 ArenaX Demo</span>
-              </div>
-            </div>
+  const initials = useMemo(() => {
+    const name = user?.username || user?.email || "U";
+    return String(name).slice(0, 2).toUpperCase();
+  }, [user]);
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button className="btn">Edit Profile</button>
-              <button className="btn btn-primary">Share</button>
-            </div>
+  if (status === "loading") {
+    return (
+      <div className="container" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <div className="card" style={{ width: "min(680px, 92vw)" }}>
+          <div className="card-inner">
+            <h2 style={{ margin: 0, fontSize: 18 }}>Loading profile…</h2>
+            <p style={{ marginTop: 8, color: "rgba(255,255,255,0.68)" }}>
+              Fetching user data from <code>/api/users/profile</code>
+            </p>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          {/* Tabs */}
-          <div className="tabs" style={{ marginTop: 18 }}>
-            {["Overview", "Tournaments", "Statistics", "Settings"].map((t) => (
-              <button
-                key={t}
-                className={`tab ${activeTab === t ? "active" : ""}`}
-                onClick={() => setActiveTab(t)}
-              >
-                {t}
+  if (status === "error") {
+    return (
+      <div className="container" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <div className="card" style={{ width: "min(680px, 92vw)" }}>
+          <div className="card-inner">
+            <h2 style={{ margin: 0, fontSize: 18 }}>Couldn’t load profile</h2>
+            <div className="alert error" style={{ marginTop: 12 }}>
+              ❌ {error}
+            </div>
+
+            <div style={{ marginTop: 12, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn" type="button" onClick={onLogout}>
+                Logout
               </button>
-            ))}
+              <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+                Retry
+              </button>
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Content */}
-      <div className="grid">
-        {/* Left column: Stats */}
-        <div style={{ display: "grid", gap: 14 }}>
-          <StatCard title="Skill Level" value="Intermediate" hint="Based on recent performance" />
-          <StatCard title="Tournaments" value="12" hint="Created & joined" />
-          <StatCard title="Win Rate" value="58%" hint="Last 30 games" />
-        </div>
+  // status === "ready"
+  return (
+    <div className="container" style={{ minHeight: "100vh", paddingTop: 26 }}>
+      <div style={{ width: "min(980px, 92vw)", margin: "0 auto", display: "grid", gap: 14 }}>
+        {/* Header / Profile card */}
+        <div className="card">
+          <div className="card-inner" style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              <div className="avatar" style={{ width: 52, height: 52, borderRadius: 16, display: "grid", placeItems: "center" }}>
+                {initials}
+              </div>
 
-        {/* Right column: Overview / Start */}
-        <div style={{ display: "grid", gap: 14 }}>
-          <div className="card">
-            <div className="card-inner">
-              <h2 style={{ margin: 0, fontSize: 18 }}>Overview</h2>
-              <p style={{ marginTop: 8, color: "rgba(255,255,255,0.68)" }}>
-                This is a demo user profile screen for ArenaX. From here you can start a tournament
-                using the backend endpoint <code>/api/games</code>. The backend will later map this
-                action to Lichess tournament creation.
-              </p>
-
-              <div className="hr" />
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <span className="pill">✅ API secured (auth + rate limit)</span>
-                <span className="pill">🔌 Lichess integration in progress</span>
-                <span className="pill">🧩 Frontend ready for demo</span>
+              <div>
+                <h1 className="h1" style={{ margin: 0 }}>
+                  {user?.username || "User"}
+                </h1>
+                <p className="sub" style={{ margin: "6px 0 0" }}>
+                  {user?.email || ""}
+                </p>
               </div>
             </div>
-          </div>
 
-          <StartTournamentCard />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn" type="button" onClick={onLogout}>
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Main content: Start Tournament */}
+        <StartTournamentCard />
       </div>
     </div>
   );
