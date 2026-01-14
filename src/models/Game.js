@@ -87,6 +87,3 @@ const Game = mongoose.model('Game', gameSchema);
 
 export default Game;
 
-/*
-  Original SQLite-based implementation is kept in project history before this migration.
-*/
