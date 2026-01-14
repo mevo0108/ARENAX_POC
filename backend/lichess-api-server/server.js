@@ -4,8 +4,6 @@ import session from "express-session";
 
 import { connectDb } from "./src/db.js";
 import { authRoutes } from "./src/routes/auth.routes.js";
-app.use("/auth", authRoutes());
-
 import { arenaRoutes } from "./src/routes/arena.routes.js";
 import { createUserLichessClient } from "./src/lichessClient.user.js";
 

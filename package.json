@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "lichess": "nodemon ./lichess-api-server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -20,9 +21,10 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
+    "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.3",
-  "sqlite3": "^5.1.7",
-  "mongoose": "^7.7.0",
+    "mongoose": "^7.7.0",
+    "sqlite3": "^5.1.7",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
