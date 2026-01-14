@@ -5,8 +5,8 @@ POST http://localhost:3000/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "shaked1",
-  "email": "shaked1@gmail.com",
+  "username": "mevo",
+  "email": "mevo@gmail.com",
   "password": "12345"
 }
 
@@ -16,11 +16,10 @@ POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "shaked1",
-  "email": "shaked1@gmail.com",
+  "username": "mevo",
+  "email": "mevo@gmail.com",
   "password": "12345"
 }
-
 
 
 ### GET USER PROFILE - WORK only with valid token
@@ -38,3 +37,20 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Njc5ZGQwM
 GET https://lichess.org/api/account
 Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
 
+
+### REGISTER NEW USER ON LICHESS
+POST https://lichess.org/api/user
+Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
+Content-Type: application/json
+
+{
+  "username": "mevo",
+  "email": "mevo@gmail.com",
+  "password": "12345"
+}
+
+
+
+### CREATE NEW LICHESS GAME
+POST https://lichess.org/api/games
+Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
