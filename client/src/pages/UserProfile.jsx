@@ -7,11 +7,11 @@ export default function UserProfile() {
 
   // Demo user (later can come from backend)
   const user = {
-    name: "Shaked",
-    username: "@shakedcrissy",
-    email: "shaked@example.com",
+    name: "Dani Cohen",
+    username: "@danicohen",
+    email: "dani@example.com",
     lichess: "Connected",
-    avatarLetters: "S",
+    avatarLetters: "DC",
   };
 
   return (
