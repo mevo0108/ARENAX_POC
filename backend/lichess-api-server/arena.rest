@@ -1,0 +1,19 @@
+@baseUrl = http://localhost:3000
+
+### Create Arena (מחזיר tournamentId + joinUrl)
+POST {{baseUrl}}/api/arena
+Content-Type: application/json
+
+{
+  "name": "ArenaX - Blitz",
+  "clockTime": 3,
+  "clockIncrement": 2,
+  "minutes": 30,
+  "rated": false
+}
+
+### Sync games for latest arena (לא צריך להדביק ID)
+POST {{baseUrl}}/api/arena/latest/sync-games?max=50
+
+### Get saved games with moves/winner/colors (לא צריך ID)
+GET {{baseUrl}}/api/arena/latest/games
