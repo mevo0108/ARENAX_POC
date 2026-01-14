@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { loginUser, registerUser } from "../services/authApi";
 
-export default function Auth() {
+export default function Auth({ onAuthSuccess }) {
   const [activeTab, setActiveTab] = useState("Login");
 
   // Login
@@ -41,11 +41,10 @@ export default function Auth() {
         });
       }
 
-      // Save JWT token for authenticated routes (games/profile)
-      localStorage.setItem("token", data.token);
+      // Tell App we authenticated (App will save token + switch screen)
+      onAuthSuccess?.(data.token);
 
       setMessage(activeTab === "Login" ? "✅ Logged in!" : "✅ Account created!");
-      // App.jsx will show UserProfile once token exists
     } catch (e2) {
       setError(e2?.message || "Unknown error");
     } finally {
@@ -59,7 +58,6 @@ export default function Auth() {
       style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}
     >
       <div style={{ width: "min(520px, 92vw)" }}>
-        {/* Simple header */}
         <div style={{ marginBottom: 14, textAlign: "center" }}>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: 0.3 }}>ArenaX</div>
           <div style={{ marginTop: 6, color: "rgba(255,255,255,0.68)" }}>
@@ -67,10 +65,8 @@ export default function Auth() {
           </div>
         </div>
 
-        {/* Single card */}
         <div className="card">
           <div className="card-inner">
-            {/* Tabs */}
             <div className="tabs" style={{ marginBottom: 16 }}>
               {["Login", "Register"].map((t) => (
                 <button
@@ -107,7 +103,9 @@ export default function Auth() {
                   className="input"
                   value={activeTab === "Login" ? loginEmail : regEmail}
                   onChange={(e) =>
-                    activeTab === "Login" ? setLoginEmail(e.target.value) : setRegEmail(e.target.value)
+                    activeTab === "Login"
+                      ? setLoginEmail(e.target.value)
+                      : setRegEmail(e.target.value)
                   }
                   placeholder="shaked@example.com"
                   autoComplete="email"
