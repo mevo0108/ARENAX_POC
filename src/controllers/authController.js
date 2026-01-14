@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { accessTokenSecret } from '../middleware/auth.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  console.warn('WARNING: JWT_SECRET environment variable is not set. This is insecure and should only be used in development.');
+// Warn if the configured signing secret is absent (useful for development)
+if (!accessTokenSecret()) {
+  console.warn('WARNING: JWT secret is not set. This is insecure and should only be used in development.');
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET must be set in production environment');
+    throw new Error('JWT secret must be set in production environment');
   }
 }
 
@@ -36,13 +36,13 @@ const authController = {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create user
-      const user = await User.create(username, email, hashedPassword);
+  // Create user (use createUser to avoid passing wrong args to Mongoose Model.create)
+  const user = await User.createUser(username, email, hashedPassword);
 
       // Generate token
       const token = jwt.sign(
         { id: user.id, username: user.username, email: user.email },
-        JWT_SECRET,
+        accessTokenSecret(),
         { expiresIn: '7d' }
       );
 
@@ -86,7 +86,7 @@ const authController = {
       // Generate token
       const token = jwt.sign(
         { id: user.id, username: user.username, email: user.email },
-        JWT_SECRET,
+        accessTokenSecret(),
         { expiresIn: '7d' }
       );
 
@@ -153,8 +153,8 @@ const authController = {
 
       const token = authHeader.substring(7);
 
-      // Verify and decode token to get user ID
-      const decoded = jwt.verify(token, JWT_SECRET);
+  // Verify and decode token to get user ID
+  const decoded = jwt.verify(token, accessTokenSecret());
       const userId = decoded.id;
 
       if (!userId) {

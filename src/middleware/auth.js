@@ -9,6 +9,10 @@ const config = {
   }
 };
 
+// Export accessor so other modules sign/verify with the same secret
+const accessTokenSecret = config.token.access_token_secret;
+export { accessTokenSecret };
+
 const unless = (paths) => {
   return (req, res, next) => {
     if (paths.includes(req.path)) {

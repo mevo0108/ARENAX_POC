@@ -1,87 +1,36 @@
-import sqlite3 from 'sqlite3';
-import path from 'path';
+import mongoose from 'mongoose';
 
-const sqlite = sqlite3.verbose();
-const DB_PATH = process.env.DATABASE_PATH || './arenax.db';
+const MONGO_URI = process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/arenax';
 
-const db = new sqlite.Database(DB_PATH, (err) => {
-  if (err) {
-    console.error('Error connecting to database:', err);
-  } else {
-    console.log('Connected to SQLite database');
-  }
-});
+mongoose.set('strictQuery', false);
 
-// Initialize database tables
-db.serialize(() => {
-  // Users table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+mongoose.connect(MONGO_URI, {
+  // useNewUrlParser and useUnifiedTopology are default in mongoose 6+
+})
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
-  // Games table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS games (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      game_link TEXT UNIQUE NOT NULL,
-      external_api TEXT,
-      external_game_id TEXT,
-      status TEXT DEFAULT 'pending',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      completed_at DATETIME
-    )
-  `);
+export default mongoose.connection;
 
-  // Game players table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS game_players (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      game_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      position INTEGER,
-      score INTEGER,
-      result TEXT,
-      FOREIGN KEY (game_id) REFERENCES games(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `);
+/*
+  Backup of previous SQLite initialization (kept for reference)
 
-  // Game results table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS game_results (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      game_id INTEGER NOT NULL,
-      winner_id INTEGER,
-      game_data TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (game_id) REFERENCES games(id),
-      FOREIGN KEY (winner_id) REFERENCES users(id)
-    )
-  `);
+  import sqlite3 from 'sqlite3';
+  import path from 'path';
 
-  // Blacklisted tokens table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS blacklisted_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      token TEXT UNIQUE NOT NULL,
-      user_id INTEGER NOT NULL,
-      blacklisted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      expires_at DATETIME NOT NULL,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `);
+  const sqlite = sqlite3.verbose();
+  const DB_PATH = process.env.DATABASE_PATH || './arenax.db';
 
-  // Create index for faster token lookups
-  db.run(`
-    CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_token 
-    ON blacklisted_tokens(token)
-  `);
-});
+  const db = new sqlite.Database(DB_PATH, (err) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+    } else {
+      console.log('Connected to SQLite database');
+    }
+  });
 
-export default db;
+  // ... original table creation code ...
+
+  export default db;
+
+*/

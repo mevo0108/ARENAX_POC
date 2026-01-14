@@ -1,124 +1,93 @@
-import db from '../config/database.js';
+import mongoose from 'mongoose';
 
-class User {
-  static create(username, email, hashedPassword) {
-    return new Promise((resolve, reject) => {
-      const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-      db.run(query, [username, email, hashedPassword], function (err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ id: this.lastID, username, email });
-        }
-      });
-    });
+const { Schema } = mongoose;
+
+const userSchema = new Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  created_at: { type: Date, default: Date.now }
+});
+
+const blacklistedTokenSchema = new Schema({
+  token: { type: String, required: true, unique: true },
+  // store user id as string to support legacy numeric ids and ObjectId strings
+  user_id: { type: String, required: true },
+  blacklisted_at: { type: Date, default: Date.now },
+  expires_at: { type: Date, required: true }
+});
+
+userSchema.statics.createUser = async function (username, email, hashedPassword) {
+  const user = new this({ username, email, password: hashedPassword });
+  await user.save();
+  return { id: String(user._id), username: user.username, email: user.email };
+};
+
+userSchema.statics.findByEmail = function (email) {
+  return this.findOne({ email }).lean().then(row => {
+    if (!row) return null;
+    return { id: String(row._id), username: row.username, email: row.email, password: row.password, created_at: row.created_at };
+  });
+};
+
+userSchema.statics.findByUsername = function (username) {
+  return this.findOne({ username }).lean().then(row => {
+    if (!row) return null;
+    return { id: String(row._id), username: row.username, email: row.email, password: row.password, created_at: row.created_at };
+  });
+};
+
+// Avoid recursion: use findOne instead of calling this.findById (which would call this static)
+userSchema.statics.findById = function (id) {
+  // If id is an ObjectId string it will match _id; numeric legacy ids will be stored as strings elsewhere
+  return this.findOne({ _id: id }).select('_id username email created_at').lean().then(row => {
+    if (!row) return null;
+    return { id: String(row._id), username: row.username, email: row.email, created_at: row.created_at };
+  });
+};
+
+const BlacklistedToken = mongoose.model('BlacklistedToken', blacklistedTokenSchema);
+
+userSchema.statics.blacklistToken = async function (token, userId, expiresAt) {
+  try {
+  const bt = new BlacklistedToken({ token, user_id: String(userId), expires_at: expiresAt });
+    await bt.save();
+    return { success: true, id: bt._id };
+  } catch (err) {
+    if (err.code === 11000) {
+      return { success: true, message: 'Token already blacklisted' };
+    }
+    throw err;
   }
+};
 
-  static findByEmail(email) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM users WHERE email = ?';
-      db.get(query, [email], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
+userSchema.statics.isTokenBlacklisted = async function (token) {
+  const now = new Date();
+  const found = await BlacklistedToken.findOne({ token, expires_at: { $gt: now } }).lean();
+  return !!found;
+};
 
-  static findByUsername(username) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM users WHERE username = ?';
-      db.get(query, [username], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
+userSchema.statics.cleanupExpiredTokens = async function () {
+  const result = await BlacklistedToken.deleteMany({ expires_at: { $lte: new Date() } });
+  return { deleted: result.deletedCount };
+};
 
-  static findById(id) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT id, username, email, created_at FROM users WHERE id = ?';
-      db.get(query, [id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
+userSchema.statics.deleteById = async function (id) {
+  // Delete user and related data
+  const User = this;
+  const user = await User.findById(id);
+  if (!user) throw new Error('User not found');
 
-  // Add token to blacklist
-  static blacklistToken(token, userId, expiresAt) {
-    return new Promise((resolve, reject) => {
-      const query = 'INSERT INTO blacklisted_tokens (token, user_id, expires_at) VALUES (?, ?, ?)';
-      db.run(query, [token, userId, expiresAt], function (err) {
-        if (err) {
-          // Token might already be blacklisted, that's okay
-          if (err.message.includes('UNIQUE constraint')) {
-            resolve({ success: true, message: 'Token already blacklisted' });
-          } else {
-            reject(err);
-          }
-        } else {
-          resolve({ success: true, id: this.lastID });
-        }
-      });
-    });
-  }
+  // Remove game player references and results where applicable - handled in Game model
+  await BlacklistedToken.deleteMany({ user_id: id });
+  await User.deleteOne({ _id: id });
+  return { success: true };
+};
 
-  // Check if token is blacklisted
-  static isTokenBlacklisted(token) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT id FROM blacklisted_tokens WHERE token = ? AND expires_at > datetime("now")';
-      db.get(query, [token], (err, row) => {
-        if (err) reject(err);
-        else resolve(!!row); // Returns true if token found in blacklist
-      });
-    });
-  }
-
-  // Clean up expired blacklisted tokens (optional maintenance)
-  static cleanupExpiredTokens() {
-    return new Promise((resolve, reject) => {
-      const query = 'DELETE FROM blacklisted_tokens WHERE expires_at <= datetime("now")';
-      db.run(query, function (err) {
-        if (err) reject(err);
-        else resolve({ deleted: this.changes });
-      });
-    });
-  }
-
-  // Delete user by ID
-  static deleteById(id) {
-    return new Promise((resolve, reject) => {
-      // Start a transaction to delete user and related data
-      db.serialize(() => {
-        // Delete user's game players records
-        db.run('DELETE FROM game_players WHERE user_id = ?', [id], (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-        });
-
-        // Delete user's blacklisted tokens
-        db.run('DELETE FROM blacklisted_tokens WHERE user_id = ?', [id], (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-        });
-
-        // Delete the user
-        db.run('DELETE FROM users WHERE id = ?', [id], function (err) {
-          if (err) {
-            reject(err);
-          } else if (this.changes === 0) {
-            reject(new Error('User not found'));
-          } else {
-            resolve({ success: true, deleted: this.changes });
-          }
-        });
-      });
-    });
-  }
-}
+const User = mongoose.model('User', userSchema);
 
 export default User;
+
+/*
+  Original SQLite-based implementation is kept in project history before this migration.
+*/

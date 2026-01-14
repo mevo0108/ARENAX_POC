@@ -5,8 +5,8 @@ POST http://localhost:3000/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "ela12345",
-  "email": "ela12345@gmail.com",
+  "username": "shaked1",
+  "email": "shaked1@gmail.com",
   "password": "12345"
 }
 
@@ -16,8 +16,8 @@ POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "ela12345",
-  "email": "ela12345@gmail.com",
+  "username": "shaked1",
+  "email": "shaked1@gmail.com",
   "password": "12345"
 }
 
@@ -25,10 +25,16 @@ Content-Type: application/json
 
 ### GET USER PROFILE - WORK only with valid token
 GET http://localhost:3000/api/users/profile
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OSwidXNlcm5hbWUiOiJlbGExMjM0NSIsImVtYWlsIjoiZWxhMTIzNDVAZ21haWwuY29tIiwiaWF0IjoxNzY4Mjk2NDM4LCJleHAiOjE3Njg5MDEyMzh9.jZB3X27qg7muyxsW3EiKJDCd50qlBvhOuybr4WY4J78
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Njc5ZGQwMzRmZTM2MGQ5ZTRjZmMzMiIsInVzZXJuYW1lIjoic2hha2VkMSIsImVtYWlsIjoic2hha2VkMUBnbWFpbC5jb20iLCJpYXQiOjE3NjgzOTkwMTQsImV4cCI6MTc2OTAwMzgxNH0.H5ocsGkWkzePBWsCTduHppZAQ43LFloD0V52XsdgzcU
 ### LOGOUT USER
 POST http://localhost:3000/api/auth/logout
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAsInVzZXJuYW1lIjoiZWxhMTIzNDUiLCJlbWFpbCI6ImVsYTEyMzQ1QGdtYWlsLmNvbSIsImlhdCI6MTc2ODI5NjU0NSwiZXhwIjoxNzY4OTAxMzQ1fQ.xQ934UaiKY_wtvCmYkeh0sbvFMhwibZIzcFD3wJzgiE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Njc5ZGQwMzRmZTM2MGQ5ZTRjZmMzMiIsInVzZXJuYW1lIjoic2hha2VkMSIsImVtYWlsIjoic2hha2VkMUBnbWFpbC5jb20iLCJpYXQiOjE3NjgzOTg3NjgsImV4cCI6MTc2OTAwMzU2OH0.6wCiIZf2g_rwsHvjd_UikzDGdyUCb1geA28_dZL0fLY
+
 ### DELETE USER
 DELETE http://localhost:3000/api/auth/delete
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OSwidXNlcm5hbWUiOiJlbGExMjM0NSIsImVtYWlsIjoiZWxhMTIzNDVAZ21haWwuY29tIiwiaWF0IjoxNzY4Mjk2NDM4LCJleHAiOjE3Njg5MDEyMzh9.jZB3X27qg7muyxsW3EiKJDCd50qlBvhOuybr4WY4J78
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Njc5ZGQwMzRmZTM2MGQ5ZTRjZmMzMiIsInVzZXJuYW1lIjoic2hha2VkMSIsImVtYWlsIjoic2hha2VkMUBnbWFpbC5jb20iLCJpYXQiOjE3NjgzOTg3NjgsImV4cCI6MTc2OTAwMzU2OH0.6wCiIZf2g_rwsHvjd_UikzDGdyUCb1geA28_dZL0fLY
+
+### CHECK LEECHES API CONNECTion
+GET https://lichess.org/api/account
+Authorization: Bearer lip_qvg5p6w3kqLVWiwTYy1z
+
