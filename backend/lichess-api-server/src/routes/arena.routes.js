@@ -1,5 +1,7 @@
+// src/routes/arena.routes.js
 import express from "express";
 import readline from "node:readline";
+
 import { Arena } from "../models/Arena.js";
 import { ArenaGame } from "../models/ArenaGame.js";
 
@@ -13,17 +15,51 @@ function parseMoves(movesStr) {
 }
 
 function pickUsername(playerObj) {
+  // JSON export לפעמים נותן players.white.user.name או players.white.name
   return playerObj?.user?.name || playerObj?.name || null;
 }
 
+function requireAuth(req, res) {
+  if (!req.session?.lichessAccessToken) {
+    res.status(401).json({ ok: false, error: "Login with Lichess first" });
+    return false;
+  }
+  if (!req.lichess) {
+    res.status(500).json({ ok: false, error: "Missing req.lichess client" });
+    return false;
+  }
+  return true;
+}
+
 /**
- * In-memory sync managers
+ * In-memory sync managers:
  * tournamentId -> { timer, running, intervalMs, lastRunAt, lastError, stats }
  */
 const syncManagers = new Map();
 
+function ensureManager(tournamentId) {
+  if (!syncManagers.has(tournamentId)) {
+    syncManagers.set(tournamentId, {
+      running: false,
+      timer: null,
+      intervalMs: 8000,
+      lastRunAt: null,
+      lastError: null,
+      stats: { cycles: 0, savedNew: 0, refreshed: 0, fetchedIds: 0 },
+    });
+  }
+  return syncManagers.get(tournamentId);
+}
+
+function stopSyncLoop(tournamentId) {
+  const mgr = ensureManager(tournamentId);
+  if (mgr.timer) clearInterval(mgr.timer);
+  mgr.timer = null;
+  mgr.running = false;
+  return mgr;
+}
+
 async function fetchTournamentGameIds(lichess, tournamentId, max = 200) {
-  // Stream NDJSON of tournament games, take IDs
   const resp = await lichess.get(`/api/tournament/${encodeURIComponent(tournamentId)}/games`, {
     responseType: "stream",
     headers: { Accept: "application/x-ndjson" },
@@ -74,7 +110,7 @@ async function upsertGameFromExport(tournamentId, gameId, data) {
         gameId,
         white: { username: whiteU, rating: whiteRating },
         black: { username: blackU, rating: blackRating },
-        winner: data?.winner,
+        winner: data?.winner, // "white" | "black" | undefined
         status: data?.status,
         movesUci,
         pgn: data?.pgn,
@@ -89,19 +125,17 @@ async function upsertGameFromExport(tournamentId, gameId, data) {
 
 /**
  * One sync cycle:
- * - fetch tournament games list
- * - for new gameIds: export + save
- * - for "active/not finished" games already in DB: re-export + update (to get latest moves)
+ * - fetch recent tournament game ids
+ * - export+save NEW games (limit per cycle)
+ * - refresh some ACTIVE games (status=started) so moves update while playing
  */
 async function syncOnce(lichess, tournamentId, options = {}) {
   const max = options.max ?? 200;
   const perCycleNewLimit = options.perCycleNewLimit ?? 25;
   const refreshActiveLimit = options.refreshActiveLimit ?? 15;
 
-  // 1) get recent game ids
   const ids = await fetchTournamentGameIds(lichess, tournamentId, max);
 
-  // 2) find which are new (not in DB)
   const existing = await ArenaGame.find({ gameId: { $in: ids } })
     .select({ gameId: 1, status: 1 })
     .lean();
@@ -109,7 +143,6 @@ async function syncOnce(lichess, tournamentId, options = {}) {
   const existingSet = new Set(existing.map((g) => g.gameId));
   const newIds = ids.filter((id) => !existingSet.has(id)).slice(0, perCycleNewLimit);
 
-  // 3) choose some active games to refresh (moves in progress)
   const activeIds = existing
     .filter((g) => !g.status || g.status === "started")
     .map((g) => g.gameId)
@@ -118,16 +151,15 @@ async function syncOnce(lichess, tournamentId, options = {}) {
   let savedNew = 0;
   let refreshed = 0;
 
-  // helper for rate-limit friendly fetch
   async function safeExportAndSave(gameId) {
     try {
       const data = await fetchGameExport(lichess, gameId);
       await upsertGameFromExport(tournamentId, gameId, data);
-      await sleep(250);
+      await sleep(250); // gentle spacing
       return { ok: true };
     } catch (err) {
+      // אם נתקעת ב-rate limit
       if (err?.response?.status === 429) {
-        // rate-limited: wait and skip this round
         await sleep(60_000);
         return { ok: false, rateLimited: true };
       }
@@ -145,27 +177,7 @@ async function syncOnce(lichess, tournamentId, options = {}) {
     if (r.ok) refreshed++;
   }
 
-  return {
-    fetchedIds: ids.length,
-    savedNew,
-    refreshed,
-    newIds,
-    activeIds,
-  };
-}
-
-function ensureManager(tournamentId) {
-  if (!syncManagers.has(tournamentId)) {
-    syncManagers.set(tournamentId, {
-      running: false,
-      timer: null,
-      intervalMs: 8000,
-      lastRunAt: null,
-      lastError: null,
-      stats: { cycles: 0, savedNew: 0, refreshed: 0, fetchedIds: 0 },
-    });
-  }
-  return syncManagers.get(tournamentId);
+  return { fetchedIds: ids.length, savedNew, refreshed };
 }
 
 function startSyncLoop(lichess, tournamentId, intervalMs = 8000) {
@@ -179,7 +191,7 @@ function startSyncLoop(lichess, tournamentId, intervalMs = 8000) {
   let inFlight = false;
 
   mgr.timer = setInterval(async () => {
-    if (inFlight) return; // prevent overlapping cycles
+    if (inFlight) return; // prevent overlap
     inFlight = true;
 
     try {
@@ -205,19 +217,17 @@ function startSyncLoop(lichess, tournamentId, intervalMs = 8000) {
   return mgr;
 }
 
-function stopSyncLoop(tournamentId) {
-  const mgr = ensureManager(tournamentId);
-  if (mgr.timer) clearInterval(mgr.timer);
-  mgr.timer = null;
-  mgr.running = false;
-  return mgr;
-}
-
-export function arenaRoutes(lichess) {
+export function arenaRoutes() {
   const router = express.Router();
 
-  // Create arena
+  /**
+   * POST /api/arena
+   * Create arena (requires OAuth login)
+   */
   router.post("/", async (req, res) => {
+    if (!requireAuth(req, res)) return;
+    const lichess = req.lichess;
+
     try {
       const {
         name = "ArenaX",
@@ -245,6 +255,7 @@ export function arenaRoutes(lichess) {
       const t = r.data;
       const joinUrl = `https://lichess.org/tournament/${t.id}`;
 
+      // אם תרצה "זירה פעילה אחת למשתמש" אפשר למחוק קודמים לפי user — כרגע שומרים הכל
       await Arena.create({
         tournamentId: t.id,
         joinUrl,
@@ -259,48 +270,79 @@ export function arenaRoutes(lichess) {
         raw: t,
       });
 
-      res.json({ ok: true, tournamentId: t.id, joinUrl, startsAt: t.startsAt, secondsToStart: t.secondsToStart });
+      res.json({
+        ok: true,
+        tournamentId: t.id,
+        joinUrl,
+        startsAt: t.startsAt,
+        secondsToStart: t.secondsToStart,
+        fullName: t.fullName,
+      });
     } catch (err) {
       const status = err?.response?.status || 500;
       res.status(status).json({ ok: false, error: err?.response?.data || err.message });
     }
   });
 
-  // Latest arena
+  /**
+   * GET /api/arena/latest
+   */
   router.get("/latest", async (req, res) => {
+    if (!requireAuth(req, res)) return;
+
     const arena = await Arena.findOne().sort({ createdAt: -1 }).lean();
     if (!arena) return res.status(404).json({ ok: false, error: "No arena found" });
+
     res.json({ ok: true, tournamentId: arena.tournamentId, joinUrl: arena.joinUrl, arena });
   });
 
-  // ========= REALTIME SYNC CONTROLS =========
-
-  // Start sync for latest arena (no manual ID)
+  /**
+   * POST /api/arena/latest/sync/start?intervalMs=8000
+   */
   router.post("/latest/sync/start", async (req, res) => {
+    if (!requireAuth(req, res)) return;
+    const lichess = req.lichess;
+
     const arena = await Arena.findOne().sort({ createdAt: -1 }).lean();
     if (!arena) return res.status(404).json({ ok: false, error: "No arena found" });
 
     const intervalMs = Number(req.query.intervalMs || 8000);
     const mgr = startSyncLoop(lichess, arena.tournamentId, intervalMs);
 
-    res.json({ ok: true, tournamentId: arena.tournamentId, joinUrl: arena.joinUrl, running: mgr.running, intervalMs: mgr.intervalMs });
+    res.json({
+      ok: true,
+      tournamentId: arena.tournamentId,
+      joinUrl: arena.joinUrl,
+      running: mgr.running,
+      intervalMs: mgr.intervalMs,
+    });
   });
 
-  // Stop sync for latest arena
+  /**
+   * POST /api/arena/latest/sync/stop
+   */
   router.post("/latest/sync/stop", async (req, res) => {
+    if (!requireAuth(req, res)) return;
+
     const arena = await Arena.findOne().sort({ createdAt: -1 }).lean();
     if (!arena) return res.status(404).json({ ok: false, error: "No arena found" });
 
     const mgr = stopSyncLoop(arena.tournamentId);
+
     res.json({ ok: true, tournamentId: arena.tournamentId, running: mgr.running });
   });
 
-  // Sync status for latest arena
+  /**
+   * GET /api/arena/latest/sync/status
+   */
   router.get("/latest/sync/status", async (req, res) => {
+    if (!requireAuth(req, res)) return;
+
     const arena = await Arena.findOne().sort({ createdAt: -1 }).lean();
     if (!arena) return res.status(404).json({ ok: false, error: "No arena found" });
 
     const mgr = ensureManager(arena.tournamentId);
+
     res.json({
       ok: true,
       tournamentId: arena.tournamentId,
@@ -312,18 +354,30 @@ export function arenaRoutes(lichess) {
     });
   });
 
-  // Get saved games for latest arena (with moves/winner/colors)
+  /**
+   * GET /api/arena/latest/games?limit=100
+   * Returns games saved to DB with moves/winner/colors
+   */
   router.get("/latest/games", async (req, res) => {
+    if (!requireAuth(req, res)) return;
+
     const arena = await Arena.findOne().sort({ createdAt: -1 }).lean();
     if (!arena) return res.status(404).json({ ok: false, error: "No arena found" });
 
     const limit = Number(req.query.limit || 100);
+
     const games = await ArenaGame.find({ tournamentId: arena.tournamentId })
       .sort({ createdAt: -1 })
       .limit(limit)
       .lean();
 
-    res.json({ ok: true, tournamentId: arena.tournamentId, joinUrl: arena.joinUrl, count: games.length, games });
+    res.json({
+      ok: true,
+      tournamentId: arena.tournamentId,
+      joinUrl: arena.joinUrl,
+      count: games.length,
+      games,
+    });
   });
 
   return router;
