@@ -1,4 +1,5 @@
 import Game from '../models/Game.js';
+import User from '../models/User.js';
 import { v4 as uuidv4 } from 'uuid';
 import leechesService from '../services/leechesService.js';
 
@@ -8,7 +9,7 @@ const gameController = {
     try {
       // Protect against missing body (some clients may omit Content-Type)
       const body = req.body || {};
-      const { externalApi, players } = body;
+      const { externalApi, name, players } = body;
 
       if (!req.body) {
         return res.status(400).json({ error: 'Request body required (application/json)' });
@@ -18,12 +19,21 @@ const gameController = {
       // Generate unique game link
       const gameLink = uuidv4();
 
-      // Create game
       let externalGameId = null;
+      let lichessUrl = null;
+      let playUrl = null;
+
       if (externalApi === 'leeches') {
-        // Initialize game with leeches API
-        const leechesGame = await leechesService.createGame(players || [userId]);
+        // Create tournament with Lichess API using personal access token
+        const tournamentOptions = { name: name || 'ArenaX Tournament' };
+        const leechesGame = await leechesService.createGame(
+          players || [userId],
+          tournamentOptions
+        );
+
         externalGameId = leechesGame.gameId;
+        lichessUrl = leechesGame.lichessUrl;
+        playUrl = leechesGame.playUrl;
       }
 
       const game = await Game.create(gameLink, externalApi, externalGameId);
@@ -38,6 +48,8 @@ const gameController = {
           gameLink: game.game_link,
           externalApi,
           externalGameId,
+          lichessUrl,
+          playUrl,
           joinUrl: `/api/games/${game.game_link}/join`
         }
       });

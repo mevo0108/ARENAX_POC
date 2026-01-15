@@ -10,8 +10,31 @@ Social platform for managing tournaments of card games, wallet, and connecting t
 - **Multi-player Support**: Connect multiple players to the same game session
 - **External API Integration**: Integrate with external game APIs (Leeches and more)
 - **Game Results**: Store and display game results and statistics
+- **Lichess Tournament Integration**: Create real Lichess tournaments with OAuth authentication
 
 ## Quick Start
+
+### 🚀 Option 1: Docker Testing (Recommended)
+
+Test the complete Lichess integration with Docker:
+
+```bash
+# Run automated test script
+.\test-docker-lichess.ps1
+
+# Or manually start services
+docker-compose up -d
+
+# Access application
+open http://localhost:3000
+```
+
+**For Full Lichess Testing:**
+1. Create OAuth app at [lichess.org/account/oauth/app](https://lichess.org/account/oauth/app)
+2. Update `docker-compose.yml` with real `LICHESS_CLIENT_ID`
+3. Restart: `docker-compose restart arenax-api`
+
+### 💻 Option 2: Local Development
 
 ### Prerequisites
 
@@ -74,7 +97,8 @@ ARENAX_POC/
 ## Technology Stack
 
 - **Node.js** with **Express.js** - REST API framework
-- **SQLite** - Lightweight database
+- **MongoDB** - NoSQL database
+- **Mongoose** - MongoDB object modeling
 - **JWT** - Authentication tokens
 - **bcryptjs** - Password hashing
 - **Axios** - HTTP client for external APIs

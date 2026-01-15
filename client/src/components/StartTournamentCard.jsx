@@ -90,6 +90,7 @@ export default function StartTournamentCard() {
           {status === "loading" ? "Starting…" : "Start a tournament"}
         </button>
 
+
         {status === "error" && (
           <div className="alert error" style={{ marginTop: 12 }}>
             ❌ {error}

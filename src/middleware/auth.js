@@ -53,14 +53,14 @@ const authenticateTokenHandler = async (req, res, next, ignoreExpiration = false
 
     /** @type {jwt.JwtPayload} */
     const decoded = jwt.verify(token, config.token.access_token_secret(), { ignoreExpiration });
-    const user = await User.findById(decoded.id || decoded.userId);
+    const user = await User.findOne({ _id: decoded.id || decoded.userId }).select('_id username email').lean();
 
     if (!user) {
       res.status(403).json({ message: 'Invalid token' });
       return;
     }
 
-    req.user = user;
+    req.user = { id: user._id.toString(), username: user.username, email: user.email };
     next();
 
   } catch (err) {
