@@ -3,10 +3,18 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true, trim: true },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   password: { type: String, required: true },
-  created_at: { type: Date, default: Date.now }
+  created_at: { type: Date, default: Date.now },
+
+  // ===== Profile fields (NEW) =====
+  displayName: { type: String, trim: true, maxlength: 40 },
+  avatarUrl: { type: String, trim: true },
+  bio: { type: String, trim: true, maxlength: 240 },
+  country: { type: String, trim: true, maxlength: 40 },
+  language: { type: String, trim: true, maxlength: 10 },
+  games: [{ type: String, trim: true }]
 });
 
 const blacklistedTokenSchema = new Schema({
@@ -39,18 +47,31 @@ userSchema.statics.findByUsername = function (username) {
 
 // Avoid recursion: use findOne instead of calling this.findById (which would call this static)
 userSchema.statics.findById = function (id) {
-  // If id is an ObjectId string it will match _id; numeric legacy ids will be stored as strings elsewhere
-  return this.findOne({ _id: id }).select('_id username email created_at').lean().then(row => {
-    if (!row) return null;
-    return { id: String(row._id), username: row.username, email: row.email, created_at: row.created_at };
-  });
+  return this.findOne({ _id: id })
+    .select('_id username email created_at displayName avatarUrl bio country language games')
+    .lean()
+    .then(row => {
+      if (!row) return null;
+      return {
+        id: String(row._id),
+        username: row.username,
+        email: row.email,
+        created_at: row.created_at,
+        displayName: row.displayName,
+        avatarUrl: row.avatarUrl,
+        bio: row.bio,
+        country: row.country,
+        language: row.language,
+        games: row.games
+      };
+    });
 };
 
 const BlacklistedToken = mongoose.model('BlacklistedToken', blacklistedTokenSchema);
 
 userSchema.statics.blacklistToken = async function (token, userId, expiresAt) {
   try {
-  const bt = new BlacklistedToken({ token, user_id: String(userId), expires_at: expiresAt });
+    const bt = new BlacklistedToken({ token, user_id: String(userId), expires_at: expiresAt });
     await bt.save();
     return { success: true, id: bt._id };
   } catch (err) {
@@ -73,12 +94,10 @@ userSchema.statics.cleanupExpiredTokens = async function () {
 };
 
 userSchema.statics.deleteById = async function (id) {
-  // Delete user and related data
   const User = this;
   const user = await User.findById(id);
   if (!user) throw new Error('User not found');
 
-  // Remove game player references and results where applicable - handled in Game model
   await BlacklistedToken.deleteMany({ user_id: id });
   await User.deleteOne({ _id: id });
   return { success: true };
@@ -87,7 +106,3 @@ userSchema.statics.deleteById = async function (id) {
 const User = mongoose.model('User', userSchema);
 
 export default User;
-
-/*
-  Original SQLite-based implementation is kept in project history before this migration.
-*/

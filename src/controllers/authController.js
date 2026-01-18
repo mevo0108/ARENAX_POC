@@ -4,7 +4,7 @@ import User from '../models/User.js';
 import { accessTokenSecret } from '../middleware/auth.js';
 
 // Warn if the configured signing secret is absent (useful for development)
-if (!accessTokenSecret()) {
+if (!accessTokenSecret) {
   console.warn('WARNING: JWT secret is not set. This is insecure and should only be used in development.');
   if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT secret must be set in production environment');
@@ -36,13 +36,13 @@ const authController = {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Create user (use createUser to avoid passing wrong args to Mongoose Model.create)
-  const user = await User.createUser(username, email, hashedPassword);
+      // Create user (use createUser to avoid passing wrong args to Mongoose Model.create)
+      const user = await User.createUser(username, email, hashedPassword);
 
       // Generate token
       const token = jwt.sign(
         { id: user.id, username: user.username, email: user.email },
-        accessTokenSecret(),
+        accessTokenSecret,
         { expiresIn: '7d' }
       );
 
@@ -86,7 +86,7 @@ const authController = {
       // Generate token
       const token = jwt.sign(
         { id: user.id, username: user.username, email: user.email },
-        accessTokenSecret(),
+        accessTokenSecret,
         { expiresIn: '7d' }
       );
 
@@ -104,7 +104,6 @@ const authController = {
       res.status(500).json({ error: 'Internal server error' });
     }
   },
-
 
   // Logout user with token blacklisting
   async logout(req, res) {
@@ -153,8 +152,8 @@ const authController = {
 
       const token = authHeader.substring(7);
 
-  // Verify and decode token to get user ID
-  const decoded = jwt.verify(token, accessTokenSecret());
+      // Verify and decode token to get user ID
+      const decoded = jwt.verify(token, accessTokenSecret);
       const userId = decoded.id;
 
       if (!userId) {
@@ -175,17 +174,17 @@ const authController = {
 
       // Optional: Verify password before deletion for extra security
       const password = req.body?.password;
-      
+
       if (password) {
         // Get full user with password
         const userWithPassword = await User.findByEmail(user.email);
-        
+
         if (!userWithPassword) {
           return res.status(404).json({ error: 'User not found' });
         }
-        
+
         const isPasswordValid = await bcrypt.compare(password, userWithPassword.password);
-        
+
         if (!isPasswordValid) {
           return res.status(403).json({ error: 'Invalid password. Account deletion cancelled.' });
         }
@@ -205,13 +204,13 @@ const authController = {
         }
       }
 
-      res.json({ 
+      res.json({
         message: 'Account deleted successfully',
         info: 'Your account and all associated data have been permanently removed'
       });
     } catch (error) {
       console.error('Delete account error:', error);
-      
+
       // Provide more specific error messages
       if (error.name === 'JsonWebTokenError') {
         return res.status(401).json({ error: 'Invalid token' });
@@ -219,7 +218,7 @@ const authController = {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ error: 'Token expired' });
       }
-      
+
       res.status(500).json({ error: 'Internal server error' });
     }
   }

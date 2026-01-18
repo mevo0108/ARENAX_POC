@@ -1,17 +1,11 @@
 import express from 'express';
-const router = express.Router();
 import userController from '../controllers/userController.js';
-import { authenticateToken } from '../middleware/auth.js';
-import { apiLimiter } from '../middleware/rateLimiter.js';
+import auth from '../middleware/auth.js';
 
-// All routes require authentication and rate limiting
-router.use(apiLimiter);
-router.use(authenticateToken);
+const router = express.Router();
 
-// GET /api/users/profile - Get current user profile
-router.get('/profile', userController.getProfile);
-
-// GET /api/users/games - Get user's game history
-router.get('/games', userController.getGameHistory);
+router.get('/profile', auth, userController.getProfile);
+router.patch('/profile', auth, userController.updateProfile);
+router.get('/games', auth, userController.getGameHistory);
 
 export default router;
