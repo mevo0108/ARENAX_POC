@@ -8,7 +8,7 @@ Social platform for managing tournaments of card games, wallet, and connecting t
 - **User Profile**: View profile and game history
 - **Game Session Management**: Create and join games via unique links
 - **Multi-player Support**: Connect multiple players to the same game session
-- **External API Integration**: Integrate with external game APIs (Leeches and more)
+- **External API Integration**: Integrate with external game APIs (Lichess and more)
 - **Game Results**: Store and display game results and statistics
 
 ## Quick Start
