@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Wallet screen (UI-only for now) with transaction history
+// Wallet screen (UI-only for now) with transaction history + filter
 export default function Wallet() {
   const navigate = useNavigate();
 
@@ -11,6 +11,9 @@ export default function Wallet() {
   const [status, setStatus] = useState("idle"); // idle | loading
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  // Filter: all | deposit | withdraw
+  const [filter, setFilter] = useState("all");
 
   // Demo transaction history
   const [transactions, setTransactions] = useState([
@@ -31,6 +34,11 @@ export default function Wallet() {
   const sortedTransactions = useMemo(() => {
     return [...transactions].sort((a, b) => b.at.getTime() - a.at.getTime());
   }, [transactions]);
+
+  const filteredTransactions = useMemo(() => {
+    if (filter === "all") return sortedTransactions;
+    return sortedTransactions.filter((tx) => tx.type === filter);
+  }, [sortedTransactions, filter]);
 
   function resetMessages() {
     setMessage("");
@@ -115,6 +123,20 @@ export default function Wallet() {
     resetMessages();
     setTransactions([]);
     setMessage("✅ Transaction history cleared.");
+  }
+
+  function FilterButton({ value, label }) {
+    const isActive = filter === value;
+
+    return (
+      <button
+        className={`btn ${isActive ? "btn-primary" : ""}`}
+        type="button"
+        onClick={() => setFilter(value)}
+      >
+        {label}
+      </button>
+    );
   }
 
   return (
@@ -222,21 +244,41 @@ export default function Wallet() {
 
             <div className="hr" />
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
               <h3 style={{ margin: 0, fontSize: 16 }}>Transaction history</h3>
 
-              <button className="btn" type="button" onClick={onClearHistory} disabled={transactions.length === 0}>
+              <button
+                className="btn"
+                type="button"
+                onClick={onClearHistory}
+                disabled={transactions.length === 0}
+              >
                 Clear
               </button>
             </div>
 
+            {/* Filter buttons */}
+            <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <FilterButton value="all" label="All" />
+              <FilterButton value="deposit" label="Deposits" />
+              <FilterButton value="withdraw" label="Withdrawals" />
+            </div>
+
             <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-              {sortedTransactions.length === 0 ? (
+              {filteredTransactions.length === 0 ? (
                 <div className="alert" style={{ marginTop: 2 }}>
-                  No transactions yet.
+                  No transactions for this filter.
                 </div>
               ) : (
-                sortedTransactions.slice(0, 10).map((tx) => (
+                filteredTransactions.slice(0, 10).map((tx) => (
                   <div
                     key={tx.id}
                     style={{
