@@ -10,6 +10,14 @@ export default function UserProfile({ onLogout }) {
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
 
+  // Quick stats (UI-only placeholders for now)
+  const [stats, setStats] = useState({
+    walletBalance: 0,
+    gamesCreated: 0,
+    activeTournaments: 0,
+    lastActivityAt: null,
+  });
+
   useEffect(() => {
     let cancelled = false;
 
@@ -21,6 +29,15 @@ export default function UserProfile({ onLogout }) {
         const data = await getProfile();
         if (!cancelled) {
           setUser(data?.user || null);
+
+          // Demo stats (replace with backend later)
+          setStats({
+            walletBalance: 150,
+            gamesCreated: 3,
+            activeTournaments: 1,
+            lastActivityAt: new Date(),
+          });
+
           setStatus("ready");
         }
       } catch (e) {
@@ -42,9 +59,21 @@ export default function UserProfile({ onLogout }) {
     return String(name).slice(0, 2).toUpperCase();
   }, [user]);
 
-  // --------------------
-  // Loading state
-  // --------------------
+  function formatDate(d) {
+    if (!d) return "—";
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(d);
+    } catch {
+      return String(d);
+    }
+  }
+
   if (status === "loading") {
     return (
       <div
@@ -63,9 +92,6 @@ export default function UserProfile({ onLogout }) {
     );
   }
 
-  // --------------------
-  // Error state
-  // --------------------
   if (status === "error") {
     return (
       <div
@@ -75,7 +101,6 @@ export default function UserProfile({ onLogout }) {
         <div className="card" style={{ width: "min(680px, 92vw)" }}>
           <div className="card-inner">
             <h2 style={{ margin: 0, fontSize: 18 }}>Couldn’t load profile</h2>
-
             <div className="alert error" style={{ marginTop: 12 }}>
               ❌ {error}
             </div>
@@ -111,9 +136,7 @@ export default function UserProfile({ onLogout }) {
     );
   }
 
-  // --------------------
-  // Ready state
-  // --------------------
+  // status === "ready"
   return (
     <div className="container" style={{ minHeight: "100vh", paddingTop: 26 }}>
       <div
@@ -170,10 +193,125 @@ export default function UserProfile({ onLogout }) {
                 Wallet
               </button>
 
-
               <button className="btn btn-primary" type="button" onClick={onLogout}>
                 Logout
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick stats */}
+        <div className="card">
+          <div className="card-inner">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: 18 }}>Quick stats</h2>
+
+              <button className="btn" type="button" onClick={() => window.location.reload()}>
+                Refresh
+              </button>
+            </div>
+
+            <div className="hr" />
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 14,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.68)" }}>
+                  Wallet balance
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 900 }}>
+                  {stats.walletBalance}{" "}
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.68)" }}>
+                    credits
+                  </span>
+                </div>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => navigate("/wallet")}
+                  style={{ marginTop: 10, width: "100%" }}
+                >
+                  Open wallet
+                </button>
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 14,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.68)" }}>
+                  Games created
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 900 }}>
+                  {stats.gamesCreated}
+                </div>
+                <div style={{ marginTop: 10, color: "rgba(255,255,255,0.68)", fontSize: 13 }}>
+                  Total created via ArenaX
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 14,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.68)" }}>
+                  Active tournaments
+                </div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 900 }}>
+                  {stats.activeTournaments}
+                </div>
+                <div style={{ marginTop: 10, color: "rgba(255,255,255,0.68)", fontSize: 13 }}>
+                  Live right now
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 14,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.68)" }}>
+                  Last activity
+                </div>
+                <div style={{ marginTop: 6, fontSize: 16, fontWeight: 900 }}>
+                  {formatDate(stats.lastActivityAt)}
+                </div>
+                <div style={{ marginTop: 10, color: "rgba(255,255,255,0.68)", fontSize: 13 }}>
+                  Updated locally
+                </div>
+              </div>
+            </div>
+
+            {/* Responsive fallback for small screens */}
+            <div style={{ marginTop: 10, color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
+              Note: These are demo values for now. We will connect them to the backend later.
             </div>
           </div>
         </div>
