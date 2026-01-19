@@ -1,57 +1,27 @@
+// src/services/authApi.js
+import { api } from "./apiClient";
+
+// Register a new user
 export async function registerUser({ username, email, password }) {
-  const res = await fetch("/api/auth/register", {
+  // Expected response: { message, user, token }
+  return api("/api/auth/register", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, email, password }),
+    body: { username, email, password },
   });
-
-  const text = await res.text();
-  let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const msg =
-      (data && data.error) ||
-      (data && data.message) ||
-      (typeof data === "string" ? data : null) ||
-      `Request failed (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return data; // { message, user, token }
 }
 
+// Login existing user
 export async function loginUser({ email, password }) {
-  const res = await fetch("/api/auth/login", {
+  // Expected response: { message, user, token }
+  return api("/api/auth/login", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: { email, password },
   });
-
-  const text = await res.text();
-  let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const msg =
-      (data && data.error) ||
-      (data && data.message) ||
-      (typeof data === "string" ? data : null) ||
-      `Request failed (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return data; // { message, user, token }
 }
 
 // OAuth functions removed - now using global API token
+// Logout user (client-side only)
+export function logoutUser() {
+  localStorage.removeItem("token");
+  window.dispatchEvent(new CustomEvent("auth:logout"));
+}
