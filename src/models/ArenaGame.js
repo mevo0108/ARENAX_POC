@@ -21,4 +21,4 @@ const ArenaGameSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const ArenaGame = mongoose.model("ArenaGame", ArenaGameSchema);
+export default mongoose.model("ArenaGame", ArenaGameSchema);

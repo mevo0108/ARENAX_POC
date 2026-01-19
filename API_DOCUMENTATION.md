@@ -282,14 +282,28 @@ Authorization: Bearer <token>
 
 ## External API Integration
 
-### Leeches API
+### Lichess Integration
 
-The system integrates with the Leeches API to manage external games. Configure the following environment variables:
+The system integrates with Lichess using OAuth 2.0 for tournament creation and management. Users must authenticate with Lichess before creating tournaments.
 
+#### OAuth Configuration
+
+Set up a Lichess OAuth application at https://lichess.org/account/oauth/app with:
+- **Homepage URL**: `http://localhost:3000`
+- **Callback URL**: `http://localhost:3000/api/auth/lichess/callback`
+
+Required environment variables:
 ```
-LEECHES_API_URL=https://api.leeches.example.com
-LEECHES_API_KEY=your-leeches-api-key
+LICHESS_CLIENT_ID=your-lichess-client-id
+LICHESS_REDIRECT_URI=http://localhost:3000/api/auth/lichess/callback
 ```
+
+#### Authentication Flow
+
+1. User registers/logs in to ARENAX
+2. User clicks "Connect Lichess" → Redirects to Lichess OAuth
+3. User authorizes ARENAX → Redirects back with access token
+4. User can now create Lichess tournaments
 
 When creating a game with `"externalApi": "leeches"`, the system will:
 1. Create a game session in the Leeches API
@@ -370,12 +384,12 @@ The API will be available at `http://localhost:3000`
 
 ## Database
 
-The system uses SQLite for simplicity. The database file (`arenax.db`) is created automatically on first run with the following tables:
+The system uses MongoDB for data persistence. The database connection is established automatically on startup with the following collections:
 
 - `users`: User accounts
-- `games`: Game sessions
-- `game_players`: Players in each game
-- `game_results`: Game results and statistics
+- `arenas`: Tournament and arena information  
+- `arenagames`: Games within arenas
+- `games`: Game sessions (if applicable)
 
 ## Testing the API
 

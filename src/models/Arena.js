@@ -25,4 +25,4 @@ const ArenaSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const Arena = mongoose.model("Arena", ArenaSchema);
+export default mongoose.model("Arena", ArenaSchema);

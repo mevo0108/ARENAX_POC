@@ -20,8 +20,8 @@ export default function StartTournamentCard() {
     try {
       const payload = {
         // keep naming flexible; backend may expect externalApi/provider/etc.
-       externalApi: "leeches"
-,
+        externalApi: "lichess"
+        ,
         name,
       };
 
@@ -89,6 +89,7 @@ export default function StartTournamentCard() {
         >
           {status === "loading" ? "Starting…" : "Start a tournament"}
         </button>
+
 
         {status === "error" && (
           <div className="alert error" style={{ marginTop: 12 }}>
