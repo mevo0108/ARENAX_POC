@@ -166,14 +166,10 @@ export default function UserProfile({ onLogout }) {
                 Lobby
               </button>
 
-              <button
-                className="btn"
-                type="button"
-                onClick={() => navigate("/wallet")}
-                disabled
-              >
+              <button className="btn" type="button" onClick={() => navigate("/wallet")}>
                 Wallet
               </button>
+
 
               <button className="btn btn-primary" type="button" onClick={onLogout}>
                 Logout
