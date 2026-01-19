@@ -1,7 +1,7 @@
 import Game from '../models/Game.js';
 import User from '../models/User.js';
 import { v4 as uuidv4 } from 'uuid';
-import leechesService from '../services/leechesService.js';
+import lichessService from '../services/lichessService.js';
 
 const gameController = {
   // Create a new game session
@@ -23,17 +23,23 @@ const gameController = {
       let lichessUrl = null;
       let playUrl = null;
 
-      if (externalApi === 'leeches') {
-        // Create tournament with Lichess API using personal access token
-        const tournamentOptions = { name: name || 'ArenaX Tournament' };
-        const leechesGame = await leechesService.createGame(
-          players || [userId],
-          tournamentOptions
-        );
+      if (externalApi === 'lichess') {
+        try {
+          // Create tournament with Lichess API using personal access token
+          const tournamentOptions = { name: name || 'ArenaX Tournament' };
+          const lichessGame = await lichessService.createGame(
+            players || [userId],
+            tournamentOptions
+          );
 
-        externalGameId = leechesGame.gameId;
-        lichessUrl = leechesGame.lichessUrl;
-        playUrl = leechesGame.playUrl;
+          externalGameId = lichessGame.gameId;
+          lichessUrl = lichessGame.lichessUrl;
+          playUrl = lichessGame.playUrl;
+        } catch (lichessError) {
+          // If Lichess fails (rate limit), create game without external link
+          console.log('Lichess unavailable, creating game without external link:', lichessError.message);
+          // Continue without Lichess - game will work in local mode
+        }
       }
 
       const game = await Game.create(gameLink, externalApi, externalGameId);
@@ -160,8 +166,8 @@ const gameController = {
       await Game.saveResult(game.id, winnerId, gameData || {});
 
       // If external API, sync results
-      if (game.external_api === 'leeches' && game.external_game_id) {
-        await leechesService.syncGameResult(game.external_game_id, winnerId, playerResults);
+      if (game.external_api === 'lichess' && game.external_game_id) {
+        await lichessService.syncGameResult(game.external_game_id, winnerId, playerResults);
       }
 
       res.json({

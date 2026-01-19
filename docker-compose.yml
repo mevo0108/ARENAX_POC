@@ -36,7 +36,8 @@ services:
       - MONGO_URI=mongodb://admin:password@mongodb:27017/arenax?authSource=admin
       - JWT_SECRET=docker-test-jwt-secret-please-change-in-production
       # IMPORTANT: Replace with real Lichess Personal Access Token from https://lichess.org/account/oauth/token/create
-      - LICHESS_TOKEN=lip_1D6Zx8nNMtYqfXZU9FD3
+      - LICHESS_TOKEN=lip_OeVkQwBrNQc4h6wJSURE
+
     depends_on:
       mongodb:
         condition: service_healthy

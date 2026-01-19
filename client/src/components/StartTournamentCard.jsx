@@ -20,8 +20,8 @@ export default function StartTournamentCard() {
     try {
       const payload = {
         // keep naming flexible; backend may expect externalApi/provider/etc.
-       externalApi: "leeches"
-,
+        externalApi: "lichess"
+        ,
         name,
       };
 

@@ -1,7 +1,7 @@
 import { createLichessClient } from '../lichessClient.js';
 import Arena from '../models/Arena.js';
 
-const leechesService = {
+const lichessService = {
   /**
    * Create a tournament in Lichess API using personal access token
    */
@@ -94,4 +94,4 @@ const leechesService = {
   }
 };
 
-export default leechesService;
+export default lichessService;
