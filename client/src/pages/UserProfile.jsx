@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import StartTournamentCard from "../components/StartTournamentCard";
 import { getProfile } from "../services/usersApi";
 
 export default function UserProfile({ onLogout }) {
+  const navigate = useNavigate();
+
   const [status, setStatus] = useState("loading"); // loading | ready | error
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
@@ -39,9 +42,15 @@ export default function UserProfile({ onLogout }) {
     return String(name).slice(0, 2).toUpperCase();
   }, [user]);
 
+  // --------------------
+  // Loading state
+  // --------------------
   if (status === "loading") {
     return (
-      <div className="container" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+      <div
+        className="container"
+        style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}
+      >
         <div className="card" style={{ width: "min(680px, 92vw)" }}>
           <div className="card-inner">
             <h2 style={{ margin: 0, fontSize: 18 }}>Loading profile…</h2>
@@ -54,21 +63,45 @@ export default function UserProfile({ onLogout }) {
     );
   }
 
+  // --------------------
+  // Error state
+  // --------------------
   if (status === "error") {
     return (
-      <div className="container" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+      <div
+        className="container"
+        style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}
+      >
         <div className="card" style={{ width: "min(680px, 92vw)" }}>
           <div className="card-inner">
             <h2 style={{ margin: 0, fontSize: 18 }}>Couldn’t load profile</h2>
+
             <div className="alert error" style={{ marginTop: 12 }}>
               ❌ {error}
             </div>
 
-            <div style={{ marginTop: 12, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                gap: 10,
+                justifyContent: "flex-end",
+                flexWrap: "wrap",
+              }}
+            >
+              <button className="btn" type="button" onClick={() => navigate("/lobby")}>
+                Back to Lobby
+              </button>
+
               <button className="btn" type="button" onClick={onLogout}>
                 Logout
               </button>
-              <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => window.location.reload()}
+              >
                 Retry
               </button>
             </div>
@@ -78,15 +111,42 @@ export default function UserProfile({ onLogout }) {
     );
   }
 
-  // status === "ready"
+  // --------------------
+  // Ready state
+  // --------------------
   return (
     <div className="container" style={{ minHeight: "100vh", paddingTop: 26 }}>
-      <div style={{ width: "min(980px, 92vw)", margin: "0 auto", display: "grid", gap: 14 }}>
+      <div
+        style={{
+          width: "min(980px, 92vw)",
+          margin: "0 auto",
+          display: "grid",
+          gap: 14,
+        }}
+      >
         {/* Header / Profile card */}
         <div className="card">
-          <div className="card-inner" style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div
+            className="card-inner"
+            style={{
+              display: "flex",
+              gap: 14,
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+          >
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <div className="avatar" style={{ width: 52, height: 52, borderRadius: 16, display: "grid", placeItems: "center" }}>
+              <div
+                className="avatar"
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
                 {initials}
               </div>
 
@@ -100,8 +160,22 @@ export default function UserProfile({ onLogout }) {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn" type="button" onClick={onLogout}>
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button className="btn" type="button" onClick={() => navigate("/lobby")}>
+                Lobby
+              </button>
+
+              <button
+                className="btn"
+                type="button"
+                onClick={() => navigate("/wallet")}
+                disabled
+              >
+                Wallet
+              </button>
+
+              <button className="btn btn-primary" type="button" onClick={onLogout}>
                 Logout
               </button>
             </div>
