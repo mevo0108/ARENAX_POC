@@ -11,6 +11,10 @@ import gameRoutes from './routes/games.js';
 // Initialize database
 import './config/database.js';
 
+console.log('ENV FILE CHECK → LICHESS_TOKEN:', process.env.LICHESS_TOKEN ? 'LOADED' : 'MISSING');
+console.log('ENV FILE CHECK → NODE_ENV:', process.env.NODE_ENV);
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
