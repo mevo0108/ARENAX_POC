@@ -1,29 +1,8 @@
-export async function getProfile() {
-  const token = localStorage.getItem("token");
+import { api } from "./apiClient";
 
-  const res = await fetch("/api/users/profile", {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+// Fetch the current user's profile
+export function getProfile() {
+  return api("/api/users/profile", {
+    method: "GET",
   });
-
-  const text = await res.text();
-  let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
-
-  if (!res.ok) {
-    const msg =
-      (data && data.error) ||
-      (data && data.message) ||
-      (typeof data === "string" ? data : null) ||
-      `Request failed (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return data; // expected: { user: { ... } }
 }
