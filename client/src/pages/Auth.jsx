@@ -29,22 +29,39 @@ export default function Auth({ onAuthSuccess }) {
     setStatus("loading");
 
     try {
-      let data;
-
       if (activeTab === "Login") {
-        data = await loginUser({ email: loginEmail, password: loginPassword });
-      } else {
-        data = await registerUser({
-          username: regUsername,
-          email: regEmail,
-          password: regPassword,
-        });
+        // Login flow: authenticate and switch to profile via App.jsx
+        const data = await loginUser({ email: loginEmail, password: loginPassword });
+
+        // Ensure a token exists before switching screens
+        if (!data?.token) {
+          throw new Error("Login succeeded but no token was returned from the server.");
+        }
+
+        // Tell App we authenticated (App will save token + switch screen)
+        onAuthSuccess?.(data.token);
+
+        setMessage("✅ Logged in!");
+        return;
       }
 
-      // Tell App we authenticated (App will save token + switch screen)
-      onAuthSuccess?.(data.token);
+      // Register flow: create account but do NOT auto-login
+      await registerUser({
+        username: regUsername,
+        email: regEmail,
+        password: regPassword,
+      });
 
-      setMessage(activeTab === "Login" ? "✅ Logged in!" : "✅ Account created!");
+      // Move user to Login tab after successful registration
+      setMessage("✅ Account created! Please log in.");
+      setActiveTab("Login");
+
+      // Optional UX: prefill login email with the registered email
+      setLoginEmail(regEmail);
+
+      // Clear sensitive fields after registration
+      setRegPassword("");
+      setLoginPassword("");
     } catch (e2) {
       setError(e2?.message || "Unknown error");
     } finally {
