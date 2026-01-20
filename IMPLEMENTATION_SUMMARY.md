@@ -73,19 +73,16 @@ Successfully implemented a complete REST API system for ARENAX, a social platfor
   - Configurable via environment variables
 
 ### 5. Database Schema ✅
-SQLite database with 4 tables:
+MongoDB database with the following collections:
 
 1. **users**: User accounts
-   - id, username, email, password (hashed), created_at
+   - id, username, email, password (hashed), lichess info, created_at
 
-2. **games**: Game sessions
-   - id, game_link (UUID), external_api, external_game_id, status, created_at, completed_at
+2. **arenas**: Tournament/Arena information
+   - id, name, description, status, players, games, settings, created_at
 
-3. **game_players**: Player participation
-   - id, game_id, user_id, position, score, result
-
-4. **game_results**: Final game outcomes
-   - id, game_id, winner_id, game_data (JSON), created_at
+3. **arenagames**: Games within arenas
+   - id, arenaId, players, status, result, externalGameId, created_at
 
 ### 6. Security Features ✅
 - **Password Security**:
@@ -136,7 +133,7 @@ SQLite database with 4 tables:
 
 - **Runtime**: Node.js
 - **Framework**: Express.js 5.2.1
-- **Database**: SQLite 5.1.7
+- **Database**: MongoDB 7 with Mongoose 7.7.0
 - **Authentication**: 
   - jsonwebtoken 9.0.3 (JWT)
   - bcryptjs 3.0.3 (password hashing)
@@ -153,7 +150,7 @@ SQLite database with 4 tables:
 ARENAX_POC/
 ├── src/
 │   ├── config/
-│   │   └── database.js         # SQLite setup and schema
+│   │   └── database.js         # MongoDB connection setup
 │   ├── controllers/
 │   │   ├── authController.js   # Registration and login logic
 │   │   ├── gameController.js   # Game management logic

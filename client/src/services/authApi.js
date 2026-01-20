@@ -53,3 +53,5 @@ export async function loginUser({ email, password }) {
 
   return data; // { message, user, token }
 }
+
+// OAuth functions removed - now using global API token
