@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import gameRoutes from './routes/games.js';
+import codeRoutes from './routes/code.js';
 
 // Initialize database
 import './config/database.js';
@@ -48,6 +49,7 @@ app.use(express.static(clientBuildPath));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/code', codeRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -73,6 +75,11 @@ app.get('/', (req, res) => {
         get: 'GET /api/games/:gameLink',
         join: 'POST /api/games/:gameLink/join',
         submitResult: 'POST /api/games/:gameLink/result'
+      },
+      code: {
+        listFiles: 'GET /api/code/files',
+        getFile: 'GET /api/code/files?path=<filepath>',
+        getTree: 'GET /api/code/tree'
       }
     }
   });
