@@ -11,6 +11,7 @@ Social platform for managing tournaments of card games, wallet, and connecting t
 - **External API Integration**: Integrate with external game APIs (Lichess and more)
 - **Game Results**: Store and display game results and statistics
 - **Lichess Tournament Integration**: Create real Lichess tournaments with OAuth authentication
+- **Code Access API**: Programmatic access to source code files for developers and AI assistants
 
 ## Quick Start
 
@@ -75,6 +76,8 @@ The API will be available at `http://localhost:3000`
 ## API Documentation
 
 See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for detailed API endpoint documentation.
+
+For accessing source code programmatically (useful for AI assistants), see [CODE_ACCESS_API.md](./CODE_ACCESS_API.md).
 
 ## Project Structure
 

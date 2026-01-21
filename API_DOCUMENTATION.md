@@ -430,3 +430,28 @@ curl -X POST http://localhost:3000/api/games \
 curl -X GET http://localhost:3000/api/users/games \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
+
+## Code Access API
+
+ARENAX provides a dedicated API for accessing source code files programmatically. This is particularly useful for AI assistants and developers who need to browse and read the codebase.
+
+For complete documentation, see [CODE_ACCESS_API.md](./CODE_ACCESS_API.md)
+
+### Quick Reference
+
+**List all source files:**
+```bash
+curl http://localhost:3000/api/code/files
+```
+
+**Get directory tree:**
+```bash
+curl http://localhost:3000/api/code/tree
+```
+
+**Read a specific file:**
+```bash
+curl "http://localhost:3000/api/code/files?path=src/server.js"
+```
+
+See [CODE_ACCESS_API.md](./CODE_ACCESS_API.md) for detailed documentation, examples, and usage with AI assistants.
