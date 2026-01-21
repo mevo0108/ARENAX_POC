@@ -298,7 +298,12 @@ Please use these endpoints to explore and understand the codebase.
 
 ## Rate Limiting
 
-Currently, there is no rate limiting on the Code Access API endpoints. In production, you may want to add rate limiting to prevent abuse.
+The Code Access API includes rate limiting to prevent abuse:
+- **Limit:** 300 requests per 15 minutes per IP address
+- **Headers:** Rate limit information is included in response headers
+- **When exceeded:** Returns a 429 status with the message "Too many requests, please try again later."
+
+This is the same rate limiting applied to other general API endpoints in ARENAX.
 
 ## Notes
 

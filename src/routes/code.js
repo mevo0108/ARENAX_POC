@@ -4,8 +4,12 @@ import {
   getFileContent,
   getDirectoryTree
 } from '../controllers/codeController.js';
+import { apiLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
+
+// Apply rate limiting to all code routes
+router.use(apiLimiter);
 
 /**
  * @route   GET /api/code/files
