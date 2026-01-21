@@ -15,8 +15,17 @@ export default function StartTournament() {
   }
 
   return (
-    <div className="container" style={{ minHeight: "100vh", paddingTop: 24 }}>
-      <div style={{ width: "min(520px, 92vw)", margin: "0 auto" }}>
+    <div
+      className="container"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 24,
+      }}
+    >
+      <div style={{ width: "min(520px, 92vw)" }}>
         <div style={{ marginBottom: 14, textAlign: "center" }}>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: 0.3 }}>
             Start a Tournament
