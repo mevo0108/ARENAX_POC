@@ -21,35 +21,39 @@ export const listSourceFiles = async (req, res) => {
     const dirsToScan = ['src', 'client/src'];
     
     // Recursive function to get all files
-    const scanDirectory = (dir, baseDir = '') => {
+    const scanDirectory = (dir) => {
       const fullPath = path.join(projectRoot, dir);
       
       if (!fs.existsSync(fullPath)) {
         return;
       }
       
-      const items = fs.readdirSync(fullPath);
-      
-      items.forEach(item => {
-        const itemPath = path.join(fullPath, item);
-        const relativePath = path.join(dir, item);
-        const stat = fs.statSync(itemPath);
+      try {
+        const items = fs.readdirSync(fullPath);
         
-        if (stat.isDirectory()) {
-          scanDirectory(relativePath);
-        } else if (stat.isFile()) {
-          // Only include source files
-          const ext = path.extname(item);
-          if (['.js', '.jsx', '.json', '.md'].includes(ext)) {
-            files.push({
-              path: relativePath.replace(/\\/g, '/'),
-              name: item,
-              size: stat.size,
-              modified: stat.mtime
-            });
+        items.forEach(item => {
+          const itemPath = path.join(fullPath, item);
+          const relativePath = path.join(dir, item);
+          const stat = fs.statSync(itemPath);
+          
+          if (stat.isDirectory()) {
+            scanDirectory(relativePath);
+          } else if (stat.isFile()) {
+            // Only include source files
+            const ext = path.extname(item);
+            if (['.js', '.jsx', '.json', '.md'].includes(ext)) {
+              files.push({
+                path: relativePath.replace(/\\/g, '/'),
+                name: item,
+                size: stat.size,
+                modified: stat.mtime
+              });
+            }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.error(`Error scanning directory ${dir}:`, err);
+      }
     };
     
     dirsToScan.forEach(dir => scanDirectory(dir));
@@ -136,63 +140,73 @@ export const getFileContent = async (req, res) => {
 // Get directory tree structure
 export const getDirectoryTree = async (req, res) => {
   try {
-    const buildTree = (dir, baseDir = '') => {
+    const buildTree = (dir) => {
       const fullPath = path.join(projectRoot, dir);
       
       if (!fs.existsSync(fullPath)) {
         return null;
       }
       
-      const stat = fs.statSync(fullPath);
-      
-      if (!stat.isDirectory()) {
+      try {
+        const stat = fs.statSync(fullPath);
+        
+        if (!stat.isDirectory()) {
+          return null;
+        }
+        
+        const items = fs.readdirSync(fullPath);
+        const children = [];
+        
+        items.forEach(item => {
+          // Skip node_modules and hidden files
+          if (item === 'node_modules' || item.startsWith('.')) {
+            return;
+          }
+          
+          const itemPath = path.join(fullPath, item);
+          const relativePath = path.join(dir, item);
+          
+          try {
+            const itemStat = fs.statSync(itemPath);
+            
+            if (itemStat.isDirectory()) {
+              const subtree = buildTree(relativePath);
+              if (subtree) {
+                children.push(subtree);
+              }
+            } else if (itemStat.isFile()) {
+              const ext = path.extname(item);
+              if (['.js', '.jsx', '.json', '.md'].includes(ext)) {
+                children.push({
+                  name: item,
+                  path: relativePath.replace(/\\/g, '/'),
+                  type: 'file',
+                  size: itemStat.size,
+                  extension: ext
+                });
+              }
+            }
+          } catch (err) {
+            console.error(`Error processing item ${relativePath}:`, err);
+          }
+        });
+        
+        return {
+          name: path.basename(dir) || dir,
+          path: dir.replace(/\\/g, '/'),
+          type: 'directory',
+          children: children.sort((a, b) => {
+            // Directories first, then files
+            if (a.type !== b.type) {
+              return a.type === 'directory' ? -1 : 1;
+            }
+            return a.name.localeCompare(b.name);
+          })
+        };
+      } catch (err) {
+        console.error(`Error building tree for ${dir}:`, err);
         return null;
       }
-      
-      const items = fs.readdirSync(fullPath);
-      const children = [];
-      
-      items.forEach(item => {
-        // Skip node_modules and hidden files
-        if (item === 'node_modules' || item.startsWith('.')) {
-          return;
-        }
-        
-        const itemPath = path.join(fullPath, item);
-        const relativePath = path.join(dir, item);
-        const itemStat = fs.statSync(itemPath);
-        
-        if (itemStat.isDirectory()) {
-          const subtree = buildTree(relativePath);
-          if (subtree) {
-            children.push(subtree);
-          }
-        } else if (itemStat.isFile()) {
-          const ext = path.extname(item);
-          if (['.js', '.jsx', '.json', '.md'].includes(ext)) {
-            children.push({
-              name: item,
-              path: relativePath.replace(/\\/g, '/'),
-              type: 'file',
-              size: itemStat.size,
-              extension: ext
-            });
-          }
-        }
-      });
-      
-      return {
-        name: path.basename(dir) || dir,
-        path: dir.replace(/\\/g, '/'),
-        type: 'directory',
-        children: children.sort((a, b) => {
-          // Directories first, then files
-          if (a.type !== b.type) {
-            return a.type === 'directory' ? -1 : 1;
-          }
-          return a.name.localeCompare(b.name);
-        })
-      };
     };
     
     const tree = {
